@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./styles.css">
+    <title>Validor de  Fees RSS</title>
+    
+</head>
+
+<body>
+    <h1>RSS Reader</h1>
+    <h2>Star reading RSS today!</h2>
+    <h2>it's simple and lovely.</h2>
+    <div id="app"></div>
+    
+    <form  class="rss-form">
+        <label for="url-input">Direccion del feed:</label>
+        <input id= "url-input" name = "url" type="text" placeholder="https://example.com/rss">
+        <button type="submit">Agregar</button>
+    </form>
+    <h3>Feeds agregados</h3>
+    <ul id="feeds-list"></ul>
+    
+</body>
+<script type="module" src="./index.js"></script>
+</html>

@@ -1,0 +1,6 @@
+imput.error {
+            border: 2px solid red;
+        }
+        imput.valid {
+            border: 2px solid green;
+        }
