@@ -1,8 +1,12 @@
 import * as yup from 'yup';
 
-export const buildSchema = (existingUrls) => (
-    yup.string()
-    .url("La URL no es válida")
-    .notOneOf(existingUrls, "El feed ya existe")
-    .required("El campo es obligatorio")
-);
+// src/app.js
+const validate = (url, state) => {
+  const existingFeeds = state.feeds.map((feed) => feed.url);
+  const schema = yup.string()
+    .required() // Ya no necesita mensaje, usará setLocale
+    .url()      // Ya no necesita mensaje, usará setLocale
+    .notOneOf(existingFeeds, 'errors.rssExists'); // Pasamos la clave directamente
+
+  return schema.validate(url);
+};
