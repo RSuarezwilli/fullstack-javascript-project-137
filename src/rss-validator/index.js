@@ -2,11 +2,20 @@
 import onChange from 'on-change';
 import i18nInstance from './init.js'; // Importamos nuestra instancia configurada
 import render from './view.js';
+import axios from 'axios';
+import _ from 'lodash';
+
+const addProxy = (url) => {
+  const proxyUrl = new URL('https://allorigins.hexlet.app/get');
+  proxyUrl.searchParams.set('disableCache', 'true');
+  proxyUrl.searchParams.set('url', url);
+  return proxyUrl.toString();
+};
 
 const app = () => {
   const state = { /* ... tu estado ... */ };
   const elements = { /* ... tus elementos ... */ };
-
+ const i18nInstance = /* ... tu instancia de i18next ... */
   // Renderizar los textos estáticos una sola vez al inicio
   elements.title.textContent = i18nInstance.t('title');
   elements.lead.textContent = i18nInstance.t('lead');
@@ -28,14 +37,46 @@ const app = () => {
       .then(() => {
         // ... lógica de éxito ...
         watchedState.form.processState = 'finished';
+        return axios.get(addProxy(url)); // Petición de red
+      })
+      .then((response) => {
+        const parsedData = parseRss(response.data.contents); // Parsing
+        const { feed, posts } = parsedData;
+
+        // Añadir datos al estado con IDs únicos
+        const feedId = _.uniqueId('feed-');
+        watchedState.feeds.unshift({ ...feed, id: feedId, url });
+
+        const postsWithIds = posts.map((post) => ({
+          ...post,
+          id: _.uniqueId('post-'),
+          feedId,
+        }));
+        watchedState.posts.unshift(...postsWithIds);
+        
+        // Actualizar estados de éxito
+        watchedState.loadingProcess.status = 'finished';
+        watchedState.form.processState = 'finished';
       })
       .catch((err) => {
-        // El mensaje de err.message ahora es la CLAVE, no el texto
-        watchedState.form.error = err.message; 
+        // Gestión centralizada de errores
+        if (err.isAxiosError) {
+          watchedState.loadingProcess.error = 'errors.network';
+        } else if (err.isParseError) {
+          watchedState.loadingProcess.error = 'errors.invalidRss';
+        } else {
+          // Errores de validación de Yup
+          watchedState.form.error = err.message;
+        }
+        
+        watchedState.loadingProcess.status = 'failed';
         watchedState.form.processState = 'failed';
       });
   });
 };
 
+
+
+    
+
 // Iniciar la aplicación
-app();

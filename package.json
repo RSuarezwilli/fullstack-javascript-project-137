@@ -13,10 +13,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "axios": "^1.12.2",
     "bootstrap": "^5.3.8",
     "css-loader": "...",
     "html-webpack-plugin": "...",
     "i18next": "^25.5.3",
+    "lodash": "^4.17.21",
     "style-loader": "...",
     "webpack": "...",
     "webpack-cli": "...",
