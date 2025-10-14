@@ -78,6 +78,9 @@ const app = () => {
     },
     feeds: [],
     posts: [],
+    uiState: {
+    readPosts: new Set(), //  Añadido: estado de posts leídos
+  },
   };
  const elements = {
     form: document.querySelector('.rss-form'),
