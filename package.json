@@ -5,23 +5,33 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "install-deps": "npm ci",
     "build": "webpack --mode production",
     "dev": "webpack --mode development",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "playwright test"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "axios": "^1.12.2",
-    "bootstrap": "^5.3.8",
-    "css-loader": "...",
-    "html-webpack-plugin": "...",
+    "bootstrap": "^5.3.3",
     "i18next": "^25.5.3",
     "lodash": "^4.17.21",
-    "style-loader": "...",
-    "webpack": "...",
-    "webpack-cli": "...",
+    "on-change": "^6.0.0",
     "yup": "^1.7.1"
+  },
+  "devDependencies": {
+    "css-loader": "^7.1.2",
+    "html-webpack-plugin": "^5.6.4",
+    "playwright": "^1.56.0",
+    "postcss": "^8.5.6",
+    "postcss-loader": "^8.2.0",
+    "sass": "^1.93.2",
+    "sass-loader": "^16.0.5",
+    "style-loader": "^4.0.0",
+    "webpack": "^5.102.1",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.2"
   }
 }
