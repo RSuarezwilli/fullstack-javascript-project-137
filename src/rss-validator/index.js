@@ -6,7 +6,7 @@ import axios from 'axios';
 import _ from 'lodash';
 import * as yup from 'yup';
 import parseRss from './parser.js';
-import resources from './locales/index.js'; // <<< ASEGÚRATE DE IMPORTAR TUS TEXTOS
+import resources from '../locales/init.js'; // <<< ASEGÚRATE DE IMPORTAR TUS TEXTOS
 
 const addProxy = (url) => {
   const proxyUrl = new URL('https://allorigins.hexlet.app/get');

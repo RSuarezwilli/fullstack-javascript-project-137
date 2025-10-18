@@ -1,6 +1,6 @@
 // src/init.js
 import i18next from 'i18next';
-import es from './locales/es.js'; // Importamos nuestras traducciones
+import es from './es.js'; // Importamos nuestras traducciones
 
 const i18nInstance = i18next.createInstance();
 
