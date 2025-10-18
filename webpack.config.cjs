@@ -10,25 +10,38 @@ module.exports = {
     filename: 'bundle.js',
     clean: true, // Limpia la carpeta dist antes de generar nuevos archivos
   },
+
+  // ✅ Configuración para trabajar en Docker o local
   devServer: {
-    static: './dist',
-    open: true,
+    static: path.resolve(__dirname, 'dist'),
+    port: 8080,
+    host: '0.0.0.0', // importante para entorno Docker
+    hot: true,
+    compress: true,
   },
+
   module: {
     rules: [
       {
-        test: /\.scss$/, // ✅ si usas SCSS
+        test: /\.scss$/, // Si usas SASS
         use: ['style-loader', 'css-loader', 'sass-loader'],
       },
       {
-        test: /\.css$/, // ✅ para tu styles.css
+        test: /\.css$/, // Si usas CSS normal
         use: ['style-loader', 'css-loader', 'postcss-loader'],
       },
     ],
   },
+
   plugins: [
     new HtmlWebpackPlugin({
-      template: './src/rss-validator/index.html', // ✅ Ruta correcta al HTML
+      template: './src/rss-validator/index.html', // ✅ Tu HTML principal
     }),
   ],
-};
+
+  // ✅ Permite importaciones relativas simples
+  resolve: {
+    extensions: ['.js'],
+  },
+}
+

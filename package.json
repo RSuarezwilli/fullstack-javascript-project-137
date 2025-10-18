@@ -8,6 +8,7 @@
     "install-deps": "npm ci",
     "build": "webpack --mode production",
     "dev": "webpack --mode development",
+    "start": "webpack serve --mode development --host 0.0.0.0 --port 8080",
     "test": "playwright test"
   },
   "keywords": [],
@@ -22,6 +23,7 @@
     "yup": "^1.7.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.1",
     "css-loader": "^7.1.2",
     "html-webpack-plugin": "^5.6.4",
     "playwright": "^1.56.0",
