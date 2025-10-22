@@ -92,7 +92,8 @@ const app = () => {
   };
   const i18nInstance = i18next.createInstance();
   i18nInstance.init({
-    lng: 'en', // Cambia esto al idioma que prefieras
+    lng: 'en',
+    // Cambia esto al idioma que prefieras
     debug: false,
     resources,
   }).then(() => {

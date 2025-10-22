@@ -1,28 +1,34 @@
 // src/parser.js
-export default (xmlString) => {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(xmlString, 'application/xml');
 
-  // Comprobación de error de parsing
-  const parseError = doc.querySelector('parsererror');
+export default (data) => {
+  const parser = new DOMParser();
+  const dom = parser.parseFromString(data, 'text/xml');
+
+  const parseError = dom.querySelector('parsererror');
   if (parseError) {
     const error = new Error(parseError.textContent);
-    error.isParseError = true; // Añadimos una bandera para identificar el error
+    // the parsing error is flagged similarly to an axios error
+    // to easier distinct it in the handler
+    error.isParsingError = true;
+    // Useful for debugging
+    error.data = data;
     throw error;
   }
 
-  // Extracción de datos del feed
-  const feedTitle = doc.querySelector('channel > title').textContent;
-  const feedDescription = doc.querySelector('channel > description').textContent;
-  const feed = { title: feedTitle, description: feedDescription };
+  const channelTitleElement = dom.querySelector('channel > title');
+  const channelTitle = channelTitleElement.textContent;
+  const channelDescriptionElement = dom.querySelector('channel > description');
+  const channelDescription = channelDescriptionElement.textContent;
 
-  // Extracción de los posts
-  const postItems = doc.querySelectorAll('item');
-  const posts = Array.from(postItems).map((item) => {
-    const postTitle = item.querySelector('title').textContent;
-    const postLink = item.querySelector('link').textContent;
-    return { title: postTitle, link: postLink };
+  const itemElements = dom.querySelectorAll('item');
+  const items = [...itemElements].map((el) => {
+    const titleElement = el.querySelector('title');
+    const title = titleElement.textContent;
+    const linkElement = el.querySelector('link');
+    const link = linkElement.textContent;
+    const descriptionElement = el.querySelector('description');
+    const description = descriptionElement.textContent;
+    return { title, link, description };
   });
-
-  return { feed, posts };
+  return { title: channelTitle, descrpition: channelDescription, items };
 };
