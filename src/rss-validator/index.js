@@ -1,168 +1,195 @@
-// src/app.js
-import onChange from 'on-change';
-import i18next from 'i18next'; // <<< ASEGÚRATE DE IMPORTAR i18next
-import render from './view.js';
-import axios from 'axios';
-import _ from 'lodash';
+import 'bootstrap';
 import * as yup from 'yup';
-import parseRss from './parser.js';
-import resources from '../locales/init.js'; // <<< ASEGÚRATE DE IMPORTAR TUS TEXTOS
+import axios from 'axios';
+import differenceWith from 'lodash/differenceWith.js';
+import uniqueId from 'lodash/uniqueId.js';
+import i18next from 'i18next';
 
+import locale from './locales/yupLocale.js';
+import resources from './locales/index.js';
+import parse from './parser.js';
+import watch from './watchers.js';
+
+const fetchingTimeout = 5000;
 const addProxy = (url) => {
-  const proxyUrl = new URL('https://allorigins.hexlet.app/get');
-  proxyUrl.searchParams.set('disableCache', 'true');
-  proxyUrl.searchParams.set('url', url);
-  return proxyUrl.toString();
+  const urlWithProxy = new URL('/get', 'https://allorigins.hexlet.app');
+  urlWithProxy.searchParams.set('url', url);
+  urlWithProxy.searchParams.set('disableCache', 'true');
+  return urlWithProxy.toString();
 };
-const updateFeeds = (state, watchedState) => {
-  const promises = state.feeds.map((feed) =>
-    axios.get(addProxy(feed.url))
+
+const getLoadingProcessErrorType = (e) => {
+  if (e.isParsingError) {
+    return 'noRss';
+  }
+  if (e.isAxiosError) {
+    return 'network';
+  }
+  return 'unknown';
+};
+
+const fetchNewPosts = (watchedState) => {
+  const promises = watchedState.feeds.map((feed) => {
+    const urlWithProxy = addProxy(feed.url);
+    return axios
+      .get(urlWithProxy)
       .then((response) => {
-        const { posts } = parseRss(response.data.contents);
-        const existingPostLinks = state.posts
-          .filter((p) => p.feedId === feed.id)
-          .map((p) => p.link);
-
-        const newPosts = posts.filter((post) => !existingPostLinks.includes(post.link));
-
-        if (newPosts.length > 0) {
-          const postsWithIds = newPosts.map((post) => ({
-            ...post,
-            id: _.uniqueId('post-'),
-            feedId: feed.id,
-          }));
-          watchedState.posts.unshift(...postsWithIds);
-        }
+        const feedData = parse(response.data.contents);
+        const newPosts = feedData.items.map((item) => ({
+          ...item,
+          channelId: feed.id,
+        }));
+        const oldPosts = watchedState.posts.filter(
+          (post) => post.channelId === feed.id,
+        );
+        const posts = differenceWith(
+          newPosts,
+          oldPosts,
+          (p1, p2) => p1.title === p2.title,
+        ).map((post) => ({ ...post, id: uniqueId() }));
+        watchedState.posts.unshift(...posts);
       })
-      .catch((err) => {
-        console.error(`Update failed for ${feed.url}:`, err);
-      })
-  );
+        console.error(e);
+      });
+  };
+  Promise.all(promises).finally(() => {
+    setTimeout(() => fetchNewPosts(watchedState), fetchingTimeout);
+  });
 
-  // Cuando todas las promesas terminen, espera 5 segundos y repite
-  Promise.all(promises)
-    .finally(() => {
-      setTimeout(() => updateFeeds(state, watchedState), 5000);
+
+const loadRss = (watchedState, url) => {
+  watchedState.loadingProcess.status = 'loading';
+  const urlWithProxy = addProxy(url);
+  return axios
+    .get(urlWithProxy, { timeout: 10000 })
+    .then((response) => {
+      const data = parse(response.data.contents);
+      const feed = {
+        url,
+        id: uniqueId(),
+        title: data.title,
+        description: data.descrpition,
+      };
+      const posts = data.items.map((item) => ({
+        ...item,
+        channelId: feed.id,
+        id: uniqueId(),
+      }));
+      watchedState.posts.unshift(...posts);
+      watchedState.feeds.unshift(feed);
+
+      watchedState.loadingProcess.error = null;
+      watchedState.loadingProcess.status = 'idle';
+      watchedState.form = {
+        ...watchedState.form,
+        status: 'filling',
+        error: null,
+      };
+    })
+    .catch((e) => {
+      console.log(e);
+      watchedState.loadingProcess.error = getLoadingProcessErrorType(e);
+      watchedState.loadingProcess.status = 'failed';
     });
 };
-const validate = (url, state) => {
-  const existingFeeds = state.feeds.map((feed) => feed.url);
-  const schema = yup.string()
-    .required()
-    .url()
-    .notOneOf(existingFeeds);
-    
-  return schema.validate(url);
-};
 
-const app = () => {
-    
-//   const state = { /* ... tu estado ... */ };
-//   const elements = { /* ... tus elementos ... */ };
-//  const i18nInstance = /* ... tu instancia de i18next ... */
-//   // Renderizar los textos estáticos una sola vez al inicio
-//   elements.title.textContent = i18nInstance.t('title');
-//   elements.lead.textContent = i18nInstance.t('lead');
-//   elements.addButton.textContent = i18nInstance.t('addButton');
-//   elements.input.setAttribute('placeholder', i18nInstance.t('placeholder'));
-//   elements.example.textContent = i18nInstance.t('example');
+export default () => {
 
-    const state = {
-    form: {
-      processState: 'filling',
-      error: null,
-    },
+  const elements = {
+    form: document.querySelector('.rss-form'),
+    input: document.querySelector('.rss-form input'),
+    feedback: document.querySelector('.feedback'),
+    submit: document.querySelector('.rss-form button[type="submit"]'),
+    feedsBox: document.querySelector('.feeds'),
+    postsBox: document.querySelector('.posts'),
+    modal: document.querySelector('#modal'),
+  };
+
+  const initState = {
+    feeds: [],
+    posts: [],
     loadingProcess: {
       status: 'idle',
       error: null,
     },
-    feeds: [],
-    posts: [],
-    uiState: {
-    readPosts: new Set(), //  Añadido: estado de posts leídos
-  },
+    form: {
+      error: null,
+      status: 'filling',
+      valid: false,
+    },
+    modal: {
+      postId: null,
+    },
+    ui: {
+      seenPosts: new Set(),
+    },
   };
- const elements = {
-    form: document.querySelector('.rss-form'),
-    input: document.querySelector('#url-input'), // Asegúrate que tu input tenga este id
-    feedback: document.querySelector('.feedback'),
-    addButton: document.querySelector('button[type="submit"]'),
-    postsContainer: document.querySelector('.posts'),
-    feedsContainer: document.querySelector('.feeds'),
-  };
-  const i18nInstance = i18next.createInstance();
-  i18nInstance.init({
-    lng: 'en',
-    // Cambia esto al idioma que prefieras
-    debug: false,
-    resources,
-  }).then(() => {
-     yup.setLocale({
-      string: {
-        url: 'errors.invalidUrl',
-      },
-      mixed: {
-        required: 'errors.required',
-        notOneOf: 'errors.rssExists',
-      },
-    });
-    
-  const watchedState = onChange(state, (path, value) => {
-    // Pasamos la instancia de i18next a la función de renderizado
-    render(state, elements, i18nInstance);
-     
-  
-  elements.form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const url = formData.get('url').trim();
 
-    validate(url, state)
-      .then(() => {
-        // ... lógica de éxito ...
-        watchedState.form.processState = 'finished';
-        return axios.get(addProxy(url)); // Petición de red
-      })
-      .then((response) => {
-        const parsedData = parseRss(response.data.contents); // Parsing
-        const { feed, posts } = parsedData;
+  // i18next creates a global state when initialized. On the one hand,
+  // this is handy as you can import an i18next object into any module to use there.
+  // On the other hand, the tests are starting to affect each other
+  const i18nextInstance = i18next.createInstance();
 
-        // Añadir datos al estado con IDs únicos
-        const feedId = _.uniqueId('feed-');
-        watchedState.feeds.unshift({ ...feed, id: feedId, url });
+  const promise = i18nextInstance
+    .init({
+      lng: 'en',
+      debug: false,
+      resources,
+    })
+    .then(() => {
+      // Texts are not stored in state
+      yup.setLocale(locale);
+      const baseUrlSchema = yup.string().url().required();
 
-        const postsWithIds = posts.map((post) => ({
-          ...post,
-          id: _.uniqueId('post-'),
-          feedId,
-        }));
-        watchedState.posts.unshift(...postsWithIds);
-        
-        // Actualizar estados de éxito
-        watchedState.loadingProcess.status = 'finished';
-        watchedState.form.processState = 'finished';
-      })
-      .catch((err) => {
-        // Gestión centralizada de errores
-        if (err.isAxiosError) {
-          watchedState.loadingProcess.error = 'errors.network';
-        } else if (err.isParseError) {
-          watchedState.loadingProcess.error = 'errors.invalidRss';
-        } else {
-          // Errores de validación de Yup
-          watchedState.form.error = err.message;
-        }
-        
-        watchedState.loadingProcess.status = 'failed';
-        watchedState.form.processState = 'failed';
+      const validateUrl = (url, feeds) => {
+        const feedUrls = feeds.map((feed) => feed.url);
+        const actualUrlSchema = baseUrlSchema.notOneOf(feedUrls);
+        // async functions only
+        return actualUrlSchema
+          .validate(url)
+          .then(() => null)
+          .catch((e) => e.message);
+      };
+      // The state is passed as a function parameter along with the i18next instance
+      const watchedState = watch(elements, initState, i18nextInstance);
+
+      elements.form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        // Getting form data via FormData
+        const data = new FormData(e.target);
+        const url = data.get('url');
+
+        validateUrl(url, watchedState.feeds).then((error) => {
+          if (!error) {
+            watchedState.form = {
+              ...watchedState.form,
+              valid: true,
+              error: null,
+            };
+            loadRss(watchedState, url);
+          } else {
+            watchedState.form = {
+              ...watchedState.form,
+              valid: false,
+              error: error.key,
+            };
+          }
+        });
       });
-  });
-});
- updateFeeds(state, watchedState);
-  });
-};
 
-// <<< ESTA PARTE FUE AGREGADA
-// Aquí se ejecuta toda la aplicación
-app();
-// Iniciar la aplicación
+      elements.postsBox.addEventListener('click', (evt) => {
+        if (!('id' in evt.target.dataset)) {
+          return;
+        }
+
+        const { id } = evt.target.dataset;
+        watchedState.modal.postId = String(id);
+        watchedState.ui.seenPosts.add(id);
+      });
+
+      // Use setTimeout (not a setInterval) since the network is unreliable; wait for the completion
+      setTimeout(() => fetchNewPosts(watchedState), fetchingTimeout);
+    });
+
+  return promise;
+};
