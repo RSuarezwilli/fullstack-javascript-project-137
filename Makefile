@@ -1,18 +1,19 @@
-# 🛠️ Makefile para automatizar tareas del proyecto RSS Validator
-
 install:
-	npm install
+    npm install
 
 start:
-	npm run develop
+    npx webpack serve
 
 build:
-	npm run build
-
-lint:
-	npx eslint .
+    npm run build
 
 test:
-	npm test
+    npm test -s
 
-setup: install build
+test-coverage:
+    npm test -- --coverage
+
+lint:
+    npx eslint .
+lint-fix:
+    npx eslint . --fix
