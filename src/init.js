@@ -57,7 +57,6 @@ const fetchNewPosts = (watchedState) => {
   });
 };
 
-
 const loadRss = (watchedState, url) => {
   watchedState.loadingProcess.status = 'loading';
   const urlWithProxy = addProxy(url);
@@ -95,7 +94,6 @@ const loadRss = (watchedState, url) => {
 };
 
 export default () => {
-
   const elements = {
     form: document.querySelector('.rss-form'),
     input: document.querySelector('.rss-form input'),

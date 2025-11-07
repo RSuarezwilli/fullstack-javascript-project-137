@@ -1,3 +1,4 @@
 import init from './init.js';
-import "./app.scss";
+import './app.scss';
+
 init();
