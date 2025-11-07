@@ -8,7 +8,7 @@ import i18next from 'i18next';
 import locale from './locales/yupLocale.js';
 import resources from './locales/index.js';
 import parse from './parser.js';
-import watch from '../locales/watchers.js';
+import watch from './locales/watchers.js';
 
 const fetchingTimeout = 5000;
 const addProxy = (url) => {
