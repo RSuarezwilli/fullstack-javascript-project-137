@@ -2,6 +2,7 @@
 import i18next from 'i18next';
 import es from './es.js'; // Importamos nuestras traducciones
 
+
 const i18nInstance = i18next.createInstance();
 
 i18nInstance.init({
