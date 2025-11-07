@@ -48,13 +48,14 @@ const fetchNewPosts = (watchedState) => {
           (p1, p2) => p1.title === p2.title,
         ).map((post) => ({ ...post, id: uniqueId() }));
         watchedState.posts.unshift(...posts);
-      })
+      }).catch((e) => {
         console.error(e);
       });
-  };
+  });
   Promise.all(promises).finally(() => {
     setTimeout(() => fetchNewPosts(watchedState), fetchingTimeout);
   });
+};
 
 
 const loadRss = (watchedState, url) => {
